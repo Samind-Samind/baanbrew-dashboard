@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Anuphan", "Noto Sans Thai", "Leelawadee UI", "Thonburi", system-ui, sans-serif;
+  --color-paper: #f3f4f0;
+  --color-espresso: #2a1f1a;
+  --color-roast: #6e6a64;
+  --color-leaf: #2f6b4f;
+  --color-crema: #c89b3c;
+  --color-rule: #dcddd6;
+}
+
+body {
+  @apply bg-paper text-espresso font-sans antialiased;
+}
