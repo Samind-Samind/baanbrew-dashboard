@@ -136,3 +136,22 @@ export function buildDashboard(rawRows) {
     dateRange: daily.length ? { from: daily[0].date, to: daily[daily.length - 1].date } : null,
   }
 }
+
+// ---------- สำหรับ Lab 2.2 (src/lab2) ----------
+const BANGKOK_HOUR = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', hourCycle: 'h23' })
+
+// แถวที่ทำความสะอาดแล้ว + ชื่อฟิลด์ที่ lab2Metrics.js ใช้ (product_id, revenue, hour)
+export function prepareRows(rawRows) {
+  const rows = []
+  for (const raw of rawRows) {
+    const [r] = cleanRows([raw])
+    if (!r) continue
+    rows.push({ ...r, product_id: r.productId, revenue: r.amount, hour: Number(BANGKOK_HOUR.format(new Date(String(raw.datetime).trim()))) })
+  }
+  return rows
+}
+
+// ยอดขายรายวันในรูป { date, revenue } (ใช้ใน BadChart3)
+export function dailyRevenue(rows) {
+  return getDailySales(rows).map((d) => ({ date: d.date, revenue: d.sales }))
+}
