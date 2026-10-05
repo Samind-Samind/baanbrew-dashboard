@@ -1,13 +1,15 @@
-// สลับระหว่างหน้า Dashboard หลักกับหน้า Lab 2.2 ด้วย #hash ใน URL (ไม่ต้องติดตั้ง router)
+// สลับระหว่างหน้า Dashboard หลัก หน้าลูกค้า และหน้า Lab 2.2 ด้วย #hash ใน URL (ไม่ต้องติดตั้ง router)
 import { useEffect, useState } from 'react'
 import App from './App.jsx'
 import Lab2Loader from './lab2/Lab2Loader.jsx'
+import CustomersPage from './customers/CustomersPage.jsx'
 
 const PAGES = [
   { hash: '', label: 'Dashboard' },
+  { hash: '#customers', label: 'ลูกค้า' },
   { hash: '#lab2', label: 'Lab 2.2 · ซ่อมกราฟ' },
 ]
-const current = () => (window.location.hash === '#lab2' ? '#lab2' : '')
+const current = () => PAGES.find((p) => p.hash && p.hash === window.location.hash)?.hash ?? ''
 
 export default function Root() {
   const [page, setPage] = useState(current)
@@ -17,6 +19,11 @@ export default function Root() {
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+
+  // แท็บ Dashboard และลูกค้าใช้โทนพาสเทล ส่วนแท็บ Lab 2.2 คงโทนเดิมไว้
+  useEffect(() => {
+    document.body.classList.toggle('theme-pastel', page !== '#lab2')
+  }, [page])
 
   return (
     <>
@@ -39,7 +46,7 @@ export default function Root() {
           <Lab2Loader />
         </main>
       ) : (
-        <App />
+        page === '#customers' ? <CustomersPage /> : <App />
       )}
     </>
   )

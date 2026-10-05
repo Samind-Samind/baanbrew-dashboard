@@ -1,9 +1,11 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import useIsMobile from '../hooks/useIsMobile'
 import { formatBaht, formatBahtShort, formatFullDate, formatShortThaiDate } from '../lib/format'
+import { CHART } from '../lib/theme'
+import { IconChip } from './Icon'
 
-const DAILY_COLOR = '#2a1f1a'
-const AVG_COLOR = '#2f6b4f'
+const DAILY_COLOR = CHART.primary
+const AVG_COLOR = CHART.accent
 
 function DailyTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -12,7 +14,7 @@ function DailyTooltip({ active, payload }) {
     <div className="rounded-lg bg-espresso text-paper px-3 py-2 text-sm shadow-lg">
       <p className="text-paper/70">{formatFullDate(date)}</p>
       <p className="tabular-nums">ยอดขายวันนี้ {formatBaht(sales)}</p>
-      <p className="font-semibold tabular-nums text-[#9fd3b6]">
+      <p className="font-semibold tabular-nums text-[#ffb59f]">
         เฉลี่ย 7 วัน {avg7 === null ? 'ข้อมูลยังไม่ครบ 7 วัน' : formatBaht(avg7)}
       </p>
     </div>
@@ -38,12 +40,15 @@ export default function DailySalesChart({ data }) {
   return (
     <section className="rounded-2xl bg-white border border-rule p-4 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">ยอดขายรายวัน</h2>
-          <p className="text-sm text-roast">เส้นเขียวคือค่าเฉลี่ยย้อนหลัง 7 วัน ช่วยให้เห็นแนวโน้มชัดขึ้น</p>
+        <div className="flex items-start gap-3">
+          <IconChip name="trend" tone="lavender" size="sm" />
+          <div>
+            <h2 className="text-lg font-semibold">ยอดขายรายวัน</h2>
+            <p className="text-sm text-roast">เส้นสีปะการังคือค่าเฉลี่ยย้อนหลัง 7 วัน ช่วยให้เห็นแนวโน้มชัดขึ้น</p>
+          </div>
         </div>
         <div className="flex gap-4 text-xs sm:text-sm text-roast">
-          <LegendItem color={DAILY_COLOR} opacity={0.3} label="ยอดขายรายวัน" />
+          <LegendItem color={DAILY_COLOR} opacity={0.35} label="ยอดขายรายวัน" />
           <LegendItem color={AVG_COLOR} thick label="เฉลี่ย 7 วัน" />
         </div>
       </div>
@@ -51,30 +56,30 @@ export default function DailySalesChart({ data }) {
       <div className="mt-4 h-60 sm:h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: isMobile ? 4 : 12, left: isMobile ? 0 : 8, bottom: 0 }}>
-            <CartesianGrid stroke="#dcddd6" strokeDasharray="3 4" vertical={false} />
+            <CartesianGrid stroke={CHART.grid} strokeDasharray="3 4" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={formatShortThaiDate}
-              tick={{ fill: '#6e6a64', fontSize: tickFont }}
+              tick={{ fill: CHART.tick, fontSize: tickFont }}
               tickLine={false}
-              axisLine={{ stroke: '#dcddd6' }}
+              axisLine={{ stroke: CHART.grid }}
               minTickGap={isMobile ? 20 : 32}
             />
             <YAxis
               tickFormatter={formatBahtShort}
-              tick={{ fill: '#6e6a64', fontSize: tickFont }}
+              tick={{ fill: CHART.tick, fontSize: tickFont }}
               tickLine={false}
               axisLine={false}
               width={isMobile ? 58 : 80}
             />
-            <Tooltip content={<DailyTooltip />} cursor={{ stroke: '#c89b3c', strokeWidth: 1 }} />
+            <Tooltip content={<DailyTooltip />} cursor={{ stroke: CHART.cursor, strokeWidth: 1 }} />
             {/* เส้นรายวัน: บางและจาง เป็นพื้นหลัง */}
             <Line
               type="linear"
               dataKey="sales"
               name="ยอดขายรายวัน"
               stroke={DAILY_COLOR}
-              strokeOpacity={0.3}
+              strokeOpacity={0.35}
               strokeWidth={1.25}
               dot={false}
               activeDot={{ r: 3, fill: DAILY_COLOR, strokeWidth: 0 }}
@@ -89,7 +94,7 @@ export default function DailySalesChart({ data }) {
               strokeWidth={3}
               dot={false}
               connectNulls={false}
-              activeDot={{ r: 5, fill: '#c89b3c', stroke: '#fff', strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: CHART.cursor, stroke: '#fff', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>
