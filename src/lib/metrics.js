@@ -123,16 +123,53 @@ export function getSalesByBranch(rows) {
 // รวมทุกตัวเลขที่หน้า Dashboard ใช้ไว้ในที่เดียว
 export function buildDashboard(rawRows) {
   const rows = cleanRows(rawRows)
-  const daily = addMovingAverage(getDailySales(rows), 7)
+  return { ...buildFilteredDashboard(rows), skippedRows: rawRows.length - rows.length }
+}
+
+// ---------- ตัวกรองของแท็บ Dashboard ----------
+
+// วันแรก/วันสุดท้ายที่มีข้อมูล และรายชื่อสาขา (ใช้ตั้งค่าตัวกรอง)
+export function getFilterBounds(rows) {
+  let min = null
+  let max = null
+  const branches = new Set()
+  for (const r of rows) {
+    if (min === null || r.date < min) min = r.date
+    if (max === null || r.date > max) max = r.date
+    branches.add(r.branch)
+  }
+  return { min, max, branches: [...branches].sort((a, b) => a.localeCompare(b, 'th')) }
+}
+
+// ย้อนหลัง n วันจาก dateKey (นับรวมวันนั้น) เช่น daysBack('2026-09-20', 7) = '2026-09-14'
+export function daysBack(dateKey, n) {
+  const d = new Date(`${dateKey}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - (n - 1))
+  return d.toISOString().slice(0, 10)
+}
+
+// filters = { from, to, branch } · branch ว่าง = ทุกสาขา
+// - KPI และกราฟรายวัน: กรองทั้งช่วงวันที่และสาขา
+// - ค่าเฉลี่ย 7 วัน: คิดจากข้อมูลก่อนตัดช่วงวันที่ วันแรกของช่วงจึงมีค่าเฉลี่ยทันที
+// - กราฟแยกสาขา: กรองแค่ช่วงวันที่ เพื่อให้ยังเทียบกับสาขาอื่นได้ (หน้าจอจะเน้นสาขาที่เลือก)
+export function buildFilteredDashboard(rows, filters = {}) {
+  const { from = null, to = null, branch = '' } = filters
+  const inRange = (r) => (!from || r.date >= from) && (!to || r.date <= to)
+  const branchRows = branch ? rows.filter((r) => r.branch === branch) : rows
+  const filtered = branchRows.filter(inRange)
+
+  const dailyAll = addMovingAverage(getDailySales(branchRows), 7)
+  const daily = dailyAll.filter((d) => (!from || d.date >= from) && (!to || d.date <= to))
+
   return {
-    rowCount: rows.length,
-    skippedRows: rawRows.length - rows.length,
-    totalSales: calcTotalSales(rows),
-    orderCount: countOrders(rows),
-    averageOrderValue: calcAverageOrderValue(rows),
-    uniqueMembers: countUniqueMembers(rows),
+    rowCount: filtered.length,
+    skippedRows: 0,
+    totalSales: calcTotalSales(filtered),
+    orderCount: countOrders(filtered),
+    averageOrderValue: calcAverageOrderValue(filtered),
+    uniqueMembers: countUniqueMembers(filtered),
     daily,
-    byBranch: getSalesByBranch(rows),
+    byBranch: getSalesByBranch(rows.filter(inRange)),
     dateRange: daily.length ? { from: daily[0].date, to: daily[daily.length - 1].date } : null,
   }
 }

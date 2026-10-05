@@ -37,3 +37,28 @@ export const formatShortThaiDate = (key) => {
   const get = (type) => parts.find((p) => p.type === type)?.value ?? ''
   return `${get('day')} ${get('month')} ${get('year').slice(-2)}`
 }
+
+// "ส.ค. 69" (เดือน + ปี พ.ศ. 2 หลัก) รับค่า YYYY-MM
+const monthYearParts = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', {
+  month: 'short', year: 'numeric', timeZone: 'UTC',
+})
+export const formatMonthShort = (month) => {
+  const parts = monthYearParts.formatToParts(fromKey(`${month}-01`))
+  const get = (type) => parts.find((p) => p.type === type)?.value ?? ''
+  return `${get('month')} ${get('year').slice(-2)}`
+}
+
+// "สิงหาคม 2569" รับค่า YYYY-MM
+const monthLong = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+export const formatMonthLong = (month) => monthLong.format(fromKey(`${month}-01`))
+
+// 12.3%
+const pctFormatter = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+export const formatPct = (n) => `${pctFormatter.format(n)}%`
+
+// ปี ค.ศ. → พ.ศ. เช่น '2026' → '2569'
+export const formatThaiYear = (year) => String(Number(year) + 543)
+
+// ชื่อเดือนเต็ม รับ 'MM' เช่น '08' → 'สิงหาคม'
+const monthNameLong = new Intl.DateTimeFormat('th-TH', { month: 'long', timeZone: 'UTC' })
+export const formatMonthName = (mm) => monthNameLong.format(fromKey(`2000-${mm}-01`))

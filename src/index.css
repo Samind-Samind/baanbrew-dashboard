@@ -14,3 +14,13 @@
 body {
   @apply bg-paper text-espresso font-sans antialiased;
 }
+
+/* โทนพาสเทลของแท็บ Dashboard และแท็บลูกค้า (Root.jsx ใส่ class นี้ที่ <body>; แท็บ Lab 2.2 ใช้โทนเดิม) */
+body.theme-pastel {
+  --color-paper: #f8f5f1;
+  --color-espresso: #3d3a4b;
+  --color-roast: #77728a;
+  --color-leaf: #2a8466;
+  --color-crema: #ee9a6a;
+  --color-rule: #ebe6ef;
+}
