@@ -1,0 +1,77 @@
+rules_version = '2';
+
+// Lab 3.3 · Security Rules ของบ้านบรู (Prompt 3.3B)
+// web config อยู่ในหน้าเว็บให้ทุกคนเห็นได้ ความปลอดภัยจริงจึงอยู่ที่ไฟล์นี้
+// หลักคิด: ปิดทุกอย่างเป็นค่าเริ่มต้น แล้วเปิดเฉพาะสิ่งที่หน้าเว็บต้องใช้จริง
+// ข้อมูลนำเข้า (npm run seed) ใช้ service account ซึ่งข้าม rules ได้ จึงไม่ต้องเปิดสิทธิ์เขียนให้
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ล็อกอินแล้ว (ด้วย Google) หรือยัง
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ฟิลด์ที่ buildSale() ใน src/lab3/saleModel.js สร้าง + created_at จาก serverTimestamp()
+    function saleFields() {
+      return ['order_id', 'datetime', 'date', 'hour', 'branch', 'product_id', 'qty', 'unit_price',
+              'revenue', 'customer_id', 'payment_method', 'channel', 'source', 'created_by', 'created_at'];
+    }
+
+    function validSale(d) {
+      return
+        // ฟิลด์ต้องครบทุกตัว และห้ามมีฟิลด์เกิน เช่น แอบเพิ่ม discount
+        d.keys().hasAll(saleFields()) && d.keys().hasOnly(saleFields())
+
+        // ต้องมาจากฟอร์มบนเว็บ และผู้บันทึกต้องเป็นคนที่ล็อกอินอยู่จริง (ปลอมเป็นคนอื่นไม่ได้)
+        && d.source == 'web'
+        && d.created_by == request.auth.uid
+
+        // เวลาบันทึกต้องเป็นเวลาของเซิร์ฟเวอร์ (serverTimestamp) ไม่ใช่เวลาที่เครื่องผู้ใช้ส่งมาเอง
+        && d.created_at == request.time
+
+        // สาขาต้องเป็น 1 ใน 5 สาขา และวิธีชำระเงินต้องเป็น 1 ใน 5 แบบ (ตรงกับ saleModel.js)
+        && d.branch in ['สยาม', 'สีลม', 'อารีย์', 'บางนา', 'มหาวิทยาลัย']
+        && d.payment_method in ['QR พร้อมเพย์', 'บัตรเครดิต', 'เงินสด', 'LINE MAN', 'Grab']
+
+        // จำนวนต้องเป็นจำนวนเต็ม 1–20 (ติดลบหรือทศนิยมไม่ได้) และชั่วโมงต้องเป็นจำนวนเต็ม 0–23
+        && d.qty is int && d.qty >= 1 && d.qty <= 20
+        && d.hour is int && d.hour >= 0 && d.hour <= 23
+
+        // ราคาต่อหน่วยต้องตรงกับราคาเมนูใน products/{product_id} (อ่านด้วย get จึงแก้ราคาเองไม่ได้)
+        // ถ้า product_id ไม่มีอยู่จริง get() จะล้มเหลวและการบันทึกถูกปฏิเสธ
+        && d.product_id is string
+        && d.unit_price == get(/databases/$(database)/documents/products/$(d.product_id)).data.price
+
+        // ยอดรวมต้องเท่ากับ จำนวน × ราคา เสมอ
+        && d.revenue == d.qty * d.unit_price
+
+        // รูปแบบวันที่: date = YYYY-MM-DD, datetime = YYYY-MM-DDTHH:MM:SS+07:00 (เวลาไทย)
+        && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && d.datetime is string && d.datetime.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+]07:00$')
+
+        // รหัสสมาชิก: ไม่ใส่ = null หรือถ้าใส่ต้องเป็น C ตามด้วยเลข 5 หลัก
+        && (d.customer_id == null || (d.customer_id is string && d.customer_id.matches('^C[0-9]{5}$')));
+    }
+
+    // เมนูและสาขา: พนักงานที่ล็อกอินอ่านได้ แต่แก้จากหน้าเว็บไม่ได้ (แก้ราคาเมนูไม่ได้)
+    match /products/{productId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    match /branches/{branchId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // ยอดขาย: ล็อกอินแล้วอ่านได้ สร้างได้เมื่อข้อมูลผ่านทุกเงื่อนไข
+    // ยอดขายที่บันทึกแล้วแก้ไขหรือลบไม่ได้ (เหมือนใบเสร็จที่ออกไปแล้ว)
+    match /sales/{saleId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && validSale(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // collection อื่นที่ไม่ได้ระบุไว้ข้างบน ปิดทั้งหมด (rules ของ Firestore ปิดเป็นค่าเริ่มต้นอยู่แล้ว)
+  }
+}
