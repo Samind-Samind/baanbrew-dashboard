@@ -192,3 +192,28 @@ export function prepareRows(rawRows) {
 export function dailyRevenue(rows) {
   return getDailySales(rows).map((d) => ({ date: d.date, revenue: d.sales }))
 }
+
+// ---------- สำหรับ Lab 3 (src/lab3/LiveTab.jsx) ----------
+// รับแถวจาก prepareRows() และใช้สูตรเดิมด้านบน ไม่คำนวณซ้ำ
+
+// KPI 4 ตัว: ยอดขาย, จำนวนบิล, ยอดเฉลี่ยต่อบิล, ลูกค้าสมาชิก
+export function computeKpis(rows) {
+  return {
+    revenue: calcTotalSales(rows),
+    bills: countOrders(rows),
+    avgPerBill: calcAverageOrderValue(rows),
+    customers: countUniqueMembers(rows),
+  }
+}
+
+// ยอดขายแยกสาขาในรูป { branch, revenue } เรียงจากมากไปน้อย
+export function revenueByBranch(rows) {
+  return getSalesByBranch(rows).map((b) => ({ branch: b.branch, revenue: b.sales }))
+}
+
+// ยอดขายรายชั่วโมง 0–23 (ชั่วโมงที่ไม่มีการขายเป็น 0) ใช้กับช่วง "วันนี้"
+export function hourlyRevenue(rows) {
+  const byHour = Array(24).fill(0)
+  for (const r of rows) byHour[r.hour] += r.amount
+  return byHour.map((revenue, hour) => ({ hour, revenue: round2(revenue) }))
+}
