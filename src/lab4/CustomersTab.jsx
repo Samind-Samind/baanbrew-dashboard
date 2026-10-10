@@ -74,6 +74,10 @@ const CSV_COLUMNS = [
   ["กลุ่ม", (c) => c.segment],
 ];
 
+// PDPA: ไฟล์มีรหัสลูกค้าและยอดซื้อรายคน = ข้อมูลส่วนบุคคล ต้องเตือนและให้ยืนยันก่อนดาวน์โหลด
+const PDPA_NOTE = "ไฟล์มีข้อมูลส่วนบุคคลของลูกค้า (PDPA) ใช้เพื่อการตลาดของร้านเท่านั้น ห้ามส่งต่อหรือเผยแพร่ และลบไฟล์เมื่อใช้เสร็จ";
+const PDPA_CONFIRM = `${PDPA_NOTE}\n\nยืนยันดาวน์โหลดหรือไม่?`;
+
 /** ดาวน์โหลด CSV ทั้งกลุ่ม ใส่ BOM (﻿) นำหน้าให้ Excel อ่านภาษาไทยเป็น UTF-8 */
 function downloadCsv(list, segment, asOf) {
   const cell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
@@ -94,7 +98,7 @@ function SegmentCustomers({ rfm, segment, onClose }) {
       sub={`เรียงตามยอดซื้อรวมมากไปน้อย · แสดง ${Math.min(TOP_N, list.length)} คนแรก · ${seg.action}`}
       right={
         <div className="flex gap-2">
-          <button onClick={() => downloadCsv(list, segment, rfm.asOf)}
+          <button onClick={() => window.confirm(PDPA_CONFIRM) && downloadCsv(list, segment, rfm.asOf)}
                   className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700">
             ดาวน์โหลด CSV ({list.length.toLocaleString()} แถว)
           </button>
@@ -131,6 +135,7 @@ function SegmentCustomers({ rfm, segment, onClose }) {
           </tbody>
         </table>
       </div>
+      <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">🔒 {PDPA_NOTE}</p>
     </Card>
   );
 }
