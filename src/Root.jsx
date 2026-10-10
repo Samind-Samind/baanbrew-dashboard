@@ -7,12 +7,15 @@ import LiveTab from './lab3/LiveTab.jsx'
 import RulesTester from './lab3/RulesTester.jsx'
 import SetupGuide from './lab3/SetupGuide.jsx'
 import { isConfigured } from './lab3/firebase.js'
+import Lab4Loader from './lab4/Lab4Loader.jsx'
 
 const PAGES = [
   { hash: '', label: 'Dashboard' },
   { hash: '#customers', label: 'ลูกค้า' },
   { hash: '#lab2', label: 'Lab 2.2 · ซ่อมกราฟ' },
   { hash: '#live', label: 'สด · Firestore' },
+  { hash: '#rfm', label: 'ลูกค้า & เมนู' },
+  { hash: '#forecast', label: 'พยากรณ์ & ผิดปกติ' },
   { hash: '#rules', label: 'ทดสอบ Rules' },
 ]
 const current = () => PAGES.find((p) => p.hash && p.hash === window.location.hash)?.hash ?? ''
@@ -50,6 +53,10 @@ export default function Root() {
       {page === '#lab2' ? (
         <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6">
           <Lab2Loader />
+        </main>
+      ) : page === '#rfm' || page === '#forecast' ? (
+        <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6">
+          <Lab4Loader tab={page} />
         </main>
       ) : page === '#live' || page === '#rules' ? (
         <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6">

@@ -178,12 +178,21 @@ export function buildFilteredDashboard(rows, filters = {}) {
 const BANGKOK_HOUR = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', hourCycle: 'h23' })
 
 // แถวที่ทำความสะอาดแล้ว + ชื่อฟิลด์ที่ lab2Metrics.js ใช้ (product_id, revenue, hour)
+// Lab 4: เพิ่ม order_id, customer_id, datetime ชื่อเดียวกับ CSV ให้ src/lib/analytics/ ใช้
 export function prepareRows(rawRows) {
   const rows = []
   for (const raw of rawRows) {
     const [r] = cleanRows([raw])
     if (!r) continue
-    rows.push({ ...r, product_id: r.productId, revenue: r.amount, hour: Number(BANGKOK_HOUR.format(new Date(String(raw.datetime).trim()))) })
+    rows.push({
+      ...r,
+      order_id: r.orderId,
+      customer_id: r.customerId,
+      product_id: r.productId,
+      datetime: String(raw.datetime).trim(),
+      revenue: r.amount,
+      hour: Number(BANGKOK_HOUR.format(new Date(String(raw.datetime).trim()))),
+    })
   }
   return rows
 }
@@ -217,3 +226,10 @@ export function hourlyRevenue(rows) {
   for (const r of rows) byHour[r.hour] += r.amount
   return byHour.map((revenue, hour) => ({ hour, revenue: round2(revenue) }))
 }
+
+// ---------- สำหรับ Lab 4 (src/lab4) ----------
+// ฿12,346 ไม่มีทศนิยม
+export const fmtBaht = (n) => '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 })
+// ฿1.2 ล. / ฿35k ใช้กับแกนกราฟ
+export const fmtShortBaht = (n) =>
+  n >= 1_000_000 ? `฿${(n / 1_000_000).toFixed(1)} ล.` : n >= 1000 ? `฿${(n / 1000).toFixed(0)}k` : `฿${n}`

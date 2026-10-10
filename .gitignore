@@ -33,3 +33,6 @@ secrets/
 import-summary.json
 .firebase/
 *-firebase-adminsdk-*.json
+
+# Claude Code (ตั้งค่าในเครื่อง)
+.claude/
