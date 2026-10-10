@@ -61,6 +61,80 @@ function RfmCard({ rfm, onPick, picked }) {
   );
 }
 
+// ---------------- Lab 4.1B · รายชื่อลูกค้าในกลุ่มที่เลือก ----------------
+const TOP_N = 15;
+const CSV_COLUMNS = [
+  ["รหัสลูกค้า", (c) => c.id],
+  ["ไม่ได้มา (วัน)", (c) => c.R],
+  ["จำนวนบิล", (c) => c.F],
+  ["ยอดซื้อรวม (บาท)", (c) => c.M],
+  ["คะแนน R", (c) => c.r],
+  ["คะแนน F", (c) => c.f],
+  ["คะแนน M", (c) => c.m],
+  ["กลุ่ม", (c) => c.segment],
+];
+
+/** ดาวน์โหลด CSV ทั้งกลุ่ม ใส่ BOM (﻿) นำหน้าให้ Excel อ่านภาษาไทยเป็น UTF-8 */
+function downloadCsv(list, segment, asOf) {
+  const cell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  const lines = [CSV_COLUMNS.map(([h]) => h), ...list.map((c) => CSV_COLUMNS.map(([, get]) => get(c)))];
+  const blob = new Blob(["﻿" + lines.map((l) => l.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement("a"), { href: url, download: `rfm-${segment.replace(/\s+/g, "-")}-${asOf}.csv` });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function SegmentCustomers({ rfm, segment, onClose }) {
+  const seg = SEG_TH[segment];
+  const list = rfm.customers.filter((c) => c.segment === segment).sort((a, b) => b.M - a.M);
+  return (
+    <Card
+      title={`${seg.th} (${segment}) · ${list.length.toLocaleString()} คน`}
+      sub={`เรียงตามยอดซื้อรวมมากไปน้อย · แสดง ${Math.min(TOP_N, list.length)} คนแรก · ${seg.action}`}
+      right={
+        <div className="flex gap-2">
+          <button onClick={() => downloadCsv(list, segment, rfm.asOf)}
+                  className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700">
+            ดาวน์โหลด CSV ({list.length.toLocaleString()} แถว)
+          </button>
+          <button onClick={onClose} aria-label="ปิดรายชื่อ"
+                  className="rounded-lg px-3 py-1.5 text-sm text-stone-600 ring-1 ring-stone-300 hover:bg-stone-100">
+            ปิด ✕
+          </button>
+        </div>
+      }
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] text-sm tabular-nums">
+          <thead className="text-left text-stone-500">
+            <tr>
+              <th className="py-1 font-medium">#</th>
+              <th className="font-medium">รหัส</th>
+              <th className="text-right font-medium">ไม่ได้มา (วัน)</th>
+              <th className="text-right font-medium">จำนวนบิล</th>
+              <th className="text-right font-medium">ยอดซื้อ</th>
+              <th className="text-right font-medium">R-F-M</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.slice(0, TOP_N).map((c, i) => (
+              <tr key={c.id} className="border-t border-stone-100">
+                <td className="py-1.5 text-stone-400">{i + 1}</td>
+                <td>{c.id}</td>
+                <td className="text-right">{c.R.toLocaleString()}</td>
+                <td className="text-right">{c.F.toLocaleString()}</td>
+                <td className="text-right">{fmtBaht(c.M)}</td>
+                <td className="text-right text-stone-600">{c.r}-{c.f}-{c.m}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
 // ---------------- Cohort ----------------
 function CohortCard({ cohort }) {
   if (cohort.error) return <Card title="Cohort · การกลับมาซื้อซ้ำ"><Pending lab="Lab 4.2" error={cohort.error} /></Card>;
@@ -159,7 +233,9 @@ export default function CustomersTab({ source }) {
       {(d) => (
         <div className="space-y-6">
           <RfmCard rfm={d.rfm} picked={picked} onPick={(s) => setPicked((p) => (p === s ? null : s))} />
-          {/* Lab 4.1B: แสดงรายชื่อลูกค้าในกลุ่มที่คลิก (picked) + ปุ่มดาวน์โหลด CSV */}
+          {picked && !d.rfm.error && (
+            <SegmentCustomers rfm={d.rfm} segment={picked} onClose={() => setPicked(null)} />
+          )}
           <CohortCard cohort={d.cohort} />
           <AbcCard abc={d.abc} />
         </div>
