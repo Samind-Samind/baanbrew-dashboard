@@ -72,6 +72,13 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Lab 4.2 · ผลวิเคราะห์ที่ pipeline (npm run analytics / GitHub Actions) สร้างไว้ 5 เอกสาร
+    // มีรหัสและยอดซื้อของลูกค้า จึงต้องล็อกอินก่อนอ่าน · เขียนไม่ได้จากหน้าเว็บ (pipeline ใช้ firebase-admin ซึ่งข้าม rules)
+    match /analytics/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // collection อื่นที่ไม่ได้ระบุไว้ข้างบน ปิดทั้งหมด (rules ของ Firestore ปิดเป็นค่าเริ่มต้นอยู่แล้ว)
   }
 }
