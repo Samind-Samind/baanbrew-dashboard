@@ -7,7 +7,11 @@ export function computeAbc(rows, products = []) {
   const name = Object.fromEntries(products.map((p) => [p.product_id, p.product_name]));
   const cat = Object.fromEntries(products.map((p) => [p.product_id, p.category]));
   const by = new Map();
-  for (const x of rows) by.set(x.product_id, (by.get(x.product_id) ?? 0) + x.revenue);
+  const qty = new Map(); // Lab 4.4B: จำนวนแก้วรวม ใช้แปลงยอดคาดการณ์เป็นจำนวนแก้วที่ควรเตรียม
+  for (const x of rows) {
+    by.set(x.product_id, (by.get(x.product_id) ?? 0) + x.revenue);
+    qty.set(x.product_id, (qty.get(x.product_id) ?? 0) + (Number(x.qty) || 0));
+  }
   const total = [...by.values()].reduce((a, b) => a + b, 0);
   let cum = 0;
   return [...by.entries()]
@@ -17,7 +21,7 @@ export function computeAbc(rows, products = []) {
       cum += revenue;
       return {
         rank: i + 1, product_id: id, name: name[id] ?? id, category: cat[id] ?? "",
-        revenue, share: revenue / total, cumShare: cum / total,
+        revenue, qty: qty.get(id), share: revenue / total, cumShare: cum / total,
         cls: before / total < 0.8 - 1e-9 ? "A" : before / total < 0.95 - 1e-9 ? "B" : "C",
       };
     });
